@@ -30,6 +30,8 @@ async function ingestDocument(buffer, filename) {
        VALUES ($1, $2, $3, $4::vector)`,
             [uuidv4(), chunk, filename, JSON.stringify(embedding)]
         );
+
+        await new Promise((r) => setTimeout(r, 100));
     }
 
     return chunks.length;

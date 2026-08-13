@@ -1,18 +1,30 @@
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1/models';
 
-async function embedText(text) {
-    const res = await fetch(
-        `${GEMINI_BASE}/gemini-embedding-001:embedContent?key=${GEMINI_KEY}`,
-        {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: { parts: [{ text }] } }),
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function embedText(text, retries = 4) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        const res = await fetch(
+            `${GEMINI_BASE}/gemini-embedding-001:embedContent?key=${GEMINI_KEY}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: { parts: [{ text }] } }),
+            }
+        );
+
+        if (res.status === 429 && attempt < retries) {
+            const wait = Math.pow(2, attempt) * 1000;
+            console.warn(`Rate limited, retrying in ${wait}ms (attempt ${attempt + 1}/${retries})`);
+            await sleep(wait);
+            continue;
         }
-    );
-    const data = await res.json();
-    if (!res.ok) throw new Error(JSON.stringify(data));
-    return data.embedding.values;
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(JSON.stringify(data));
+        return data.embedding.values;
+    }
 }
 
 async function generateAnswer(context, question) {
