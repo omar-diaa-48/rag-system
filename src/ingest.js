@@ -1,4 +1,4 @@
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const { v4: uuidv4 } = require('uuid');
 const { pool } = require('./db');
 const { embedText } = require('./embeddings');
@@ -17,7 +17,7 @@ function chunkText(text, chunkSize = 500, overlap = 50) {
 }
 
 async function ingestDocument(buffer, filename) {
-    const { text } = await pdfParse(buffer);
+    const { text } = await new PDFParse({ data: buffer }).getText();
     const chunks = chunkText(text);
 
     console.log(`Processing ${chunks.length} chunks from "${filename}"`);
